@@ -24,7 +24,7 @@ public class Solve {
     /**
      * Constructor de la clase donde se emplea Simplex 2.0 y 3.0
      * @param op Minimizar / Maximizar función objetivo.
-     * @param funcObj Función objetivo.
+     * @param funObj Función objetivo.
      * @param FO HashMap con los coeficientes de la función objetivo.
      * @param restricciones Número de restricciones.
      * @param tabla Matríz con los nuevos coeficientes de cada restricción.

@@ -28,6 +28,7 @@ public class Principal {
         System.out.println("2) Problema B");
         System.out.println("3) Problema C");
         System.out.println("4) Problema D");
+        System.out.println("5) Problema E");    //Problema con Resolución Simplex 2.0
         file = teclado.nextByte();
         System.out.println("1) Minimizar \n2) Maximizar");
         op = teclado.nextByte();
@@ -44,6 +45,9 @@ public class Principal {
                 break;
             case 4:
                 leerArchivo("Problema_D.txt", op);
+                break;
+            case 5:
+                leerArchivo("Problema_E.txt", op);
                 break;
             default:
                 System.err.println("Elija una opción válida.");

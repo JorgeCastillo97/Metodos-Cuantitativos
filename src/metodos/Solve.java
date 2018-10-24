@@ -75,10 +75,10 @@ public class Solve {
         }
         if(metodo == true){
             System.out.println("Existen coeficientes negativos en el vector solución!");
-            simplex3(Solve.tabla, Cj, coefRestDer, Zj, CjZj, coefMult, numR, Solve.op, (double)0, 0, true, true);
+            simplex3(Solve.tabla, Cj, coefRestDer, Zj, CjZj, coefMult, numR, Solve.op, true, true);
         } else {
             System.out.println("NO existen coeficientes negativos en el vector solución!");
-            simplex2(Solve.tabla, Cj, coefRestDer,Zj, CjZj, coefMult, numR, Solve.op, (double)0, 0, false,true);
+            simplex2(Solve.tabla, Cj, coefRestDer,Zj, CjZj, coefMult, numR, Solve.op, false,true);
         }
     }
     
@@ -177,13 +177,11 @@ public class Solve {
      * @param coefMult Arreglo con los coeficientes de la función objetivo que van a estar intercambiandose.
      * @param r Número de restricciones.
      * @param op Minimizar/Maximixar función.
-     * @param coefEntra Valor del coeficiente de Cj que se intercambia en una determinada fila.
-     * @param filaCambio Fila donde se sustituirá el coeficiente de Cj en coefMult.
      * @param negativos Si existen valores negativos en el vector solución, se llama recursivamente a Simplex 3.0,
      * de lo contrario se llama a Simplex 2.0
      * @param iterInicial Valor booleano que indica si es la primera iteración del problema (primer tabla).
      */
-    public static void simplex3(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, double coefEntra, int filaCambio, boolean negativos, boolean iterInicial) {
+    public static void simplex3(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, boolean negativos, boolean iterInicial) {
         System.out.println("SIMPLEX 3.0");
         if (iterInicial) {
             for(double c: coefMult) {
@@ -194,44 +192,43 @@ public class Solve {
             /*System.out.println("Termina metodo Simplex 3.0");
                 simplex2.0();
             */
+            System.out.println("No hay negativos en vector solución!");
+            System.out.println("CAMBIANDO A SIMPLEX 2.0...");
+            simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, negativos, iterInicial);
         } else {
-            //Inicia calculo de zj y cj-zj
-            //Si es la primera iteración, coeficientes de coefMult valen 0, no se realiza cambio
-            if(iterInicial) {
-                //System.out.println("No hay intercambio de filas, primera iteración.");
-            } else {
-                //System.out.println("Hay intercambio de filas.");
-            }
-            // Cálculo del vector Zj.
+            //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
+            
+            //::::::::::: CÁLCULO DE Zj :::::::::::
             double sumaZjCol = 0.0;
             for(int j =0; j<Zj.length; j++) {
                 for(int i=0; i<r ; i++) {
                     sumaZjCol += (coefMult[i])*(T[i][j]);
                 }
                 Zj[j] = sumaZjCol;
+                sumaZjCol = 0.0;
             }
             /*for(int i =0; i< Zj.length; i++) {
                 System.out.println("Zj[" + i + "] = " + Zj[i]);
             }*/
-            // Cálculo del valor de FO.
+            //::::::::::: CÁLCULO DEL VALOR DE Z (FO) :::::::::::
             double zFinal= 0.0;
             for(int i =0; i<r; i++) {
                 zFinal += (coefMult[i])*(CoefRestDer[i]);
             }
             //System.out.println("Valor de zFinal = " + Zfinal);
             
-            //Calculo de Cj-Zj
+            //::::::::::: CÁLCULO DEL VALOR DE Cj-Zj :::::::::::
             for(int i=0; i<CjZj.length; i++) {
                 CjZj[i] = Cj[i] - Zj[i];
             }
             
-            //Una vez calculado Zj, Cj-Zj y zFinal, se muestran los datos de la iteración.
+            //::::::::::: SE MUESTRA ITERACIÓN :::::::::::
             mostrarIteracion(Cj, T, Zj, zFinal, CjZj, CoefRestDer);
             
             //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
             
             /*Se obtiene la fila con el coeficiente mas (-) en CoefRestDer
-              Siempre se encontrará un valor negativo, ya que la bandera negativos = true
+              Siempre se encontrará un valor negativo, ya que bandera negativos = true
             */
             int f=0;
             double neg=CoefRestDer[0];
@@ -243,7 +240,8 @@ public class Solve {
                 }
             }
             System.out.println("Coeficiente mas negativo:" + neg);
-            //Se encuentra la posición de la fila
+            
+            //::::::::::: SE ENCUENTRA LA POSICIÓN DE LA FILA :::::::::::
             for(int i=0; i<CoefRestDer.length; i++) {
                 if(CoefRestDer[i] == neg) {
                     f = i;
@@ -257,7 +255,7 @@ public class Solve {
             double filEleg[] = T[f];
             double coRD = CoefRestDer[f];
             
-            // Se divide la fila de Cj-Zj/fila elegida.
+            //::::::::::: SE DIVIDE LA FILA DE Cj-Zj/FILA ELEGIDA. :::::::::::
             double cociente[] = new double[Cj.length];
             for(int i =0; i<Cj.length; i++) {
                 //Si existe división 0/0
@@ -276,8 +274,8 @@ public class Solve {
                 System.out.println(v);
             }*/
             
-            //Se filtran los coeficientes distintos de 0 en el vector cociente.
-            ArrayList<Double> filtrados = new ArrayList<Double>();
+            //::::::::::: FILTRACIÓN DE COCIENTES DISTINTOS DE 0 E INFINITO (M) :::::::::::
+            ArrayList<Double> filtrados = new ArrayList<>();
             for(int i =0; i<cociente.length; i++) {
                 if(cociente[i] != 0.0 && cociente[i] != M) {
                     filtrados.add(cociente[i]);
@@ -290,7 +288,7 @@ public class Solve {
                 System.out.println(fil); 
             });
             
-            //Se elige la columna
+            //::::::::::: SE ELIGE LA COLUMNA :::::::::::
             int c=0;
             double min = Math.abs(filtrados.get(0));
             for(int i = 1; i<filtrados.size(); i++) {
@@ -312,31 +310,31 @@ public class Solve {
             double reciproco = 1/pivote;
             System.out.println("Valor pivote = " + pivote);
             
-            //Obtenemos filaUnitaria
+            //::::::::::: OBTENEMOS FILA UNITARIA :::::::::::
             double filU[] = new double[4+r];
             for(int i=0; i<filU.length; i++) {
                 filU[i] = T[f][i]*reciproco;
             }
             
-            System.out.println("Fila Unitaria");
+            /*System.out.println("Fila Unitaria");
             for(int i=0; i<filU.length; i++) {
                 System.out.println("filU[" + i + "] = " + filU[i]);
-            }
+            }*/
             
-            
-            
-            //Obtenemos los coeficientes de arriba y abajo del valor pivote (columna)
+            //::::::::::: OBTENEMOS COEFICIENTES DE COLUMNA PIVOTE :::::::::::
             double coefsColPiv[] = new double[r];
             for(int i=0; i<r; i++) {
                 coefsColPiv[i] = T[i][c];
             }
-            System.out.println("Coeficientes columna pivote");
+            /*System.out.println("Coeficientes columna pivote");
             for(double val: coefsColPiv){
                 System.out.println(val);
-            }
-            //Obtenemos los conjugados de los coeficientes de la columna pivote.
+            }*/
+            
+            //::::::::::: OBTENEMOS COEFICIENTES CONJUGADOS DE COLUMNA PIVOTE :::::::::::
             double coefsColConj [] = new double[coefsColPiv.length];
-            //Seteamos la unidad en la fila del pivote
+            
+            //::::::::::: SETEAMOS LA UNIDAD EN FILA PIVOTE :::::::::::
             coefsColConj[f] = pivote*reciproco;
             for(int i=0; i<r; i++) {
                 if(i != f){
@@ -344,12 +342,12 @@ public class Solve {
                 }
             }
             
-            System.out.println("Coeficientes columna pivote conjugados");
+            /*System.out.println("Coeficientes columna pivote conjugados");
             for(int i=0; i<coefsColConj.length; i++) {
                 System.out.println("coefsColConj[" + i + "] = " + coefsColConj[i]);
-            }
+            }*/
             
-            //Reemplazamos el valor de la fila unitaria en la tabla original
+            //::::::::::: REEMPLAZO DE LA FILA UNITARIA EN TABLA ORIGINAL :::::::::::
             T[f] = filU;
             /*System.out.println("Nueva tabla con fila unitaria");
             for(double [] fi: T){
@@ -359,26 +357,83 @@ public class Solve {
                 System.out.println("");
             }*/
             
-            /*
-            Para saber que coeficiente reemplazar en coefMult, preguntar por col
-            Si col =0 ->Entra a
-            Si col =1 ->Entra b
-            Si col =2 ->Entra c
-            Si col =3 ->Entra d
-            Si col <0 ->Entra holgura
-            Para saber en que fila (en que posición de coefMult, asignar valor de filas
-            varCoefMult<fila, "a/b/c/d/h dependiendo valor de  col">
-            varCoefMult<1,b> para prob 3 en 1ra iteración.
-            */
+            //::::::::::: HACEMOS 0 LOS COEFICIENTES DE LA COLUMNA PIVOTE :::::::::::
+            for(int i=0; i<r; i++) {
+                for(int j =0; j<Cj.length; j++){
+                    if(i != f){ //Mientras no sea la fila pivote
+                        T[i][j] = ((coefsColConj[i])*(filU[j])) + T[i][j];
+                    }
+                }
+            }
             
+            /*System.out.println("Nueva tabla obtenida con columna pivote en 0");
+            for(double[] fil: T){
+                for(double val : fil){
+                    System.out.print("\t" + val);
+                }
+                System.out.println("");
+            }*/
             
-            //Coeficientes conjugados para hacer 0 todos los valores de la columna, menos pivote
-            /*Para no cambiar el valor unitario del pivote se preguntara en la iteración de la tabla
-            por el valor de i, si el valor de i es igual al de la fila encontrada se ignora la fila, 
-            de lo contrario, se suma cada valor de filaUnitaria[i]*CoefConjugado[i] + T[i][j];
-            y se guada en la misma posicion de la tabla.
-            */
+            //::::::::::: CALCULO DE LOS NUEVOS VALORES DEL VECTOR SOLUCIÓN :::::::::::
+            CoefRestDer[f] = CoefRestDer[f]*reciproco;
+            System.out.println("NUEVO CoefRestDer: " + CoefRestDer[f] );
             
+            for(int i =0; i<CoefRestDer.length; i++) {
+                if( i != f) { //Mientras no sea la fila pivote
+                    CoefRestDer[i] = (coefsColConj[i])*(CoefRestDer[f]) + CoefRestDer[i];
+                }
+            }
+            System.out.println("Nuevos coeficientes vector solución");
+            for(int i =0; i<CoefRestDer.length; i++) {
+                System.out.println("CoefRestDer[" + i + "] = " + CoefRestDer[i]);
+            }
+            
+            //::::::::::: SE INTERCAMBIA COEFICIENTE DE Cj (COLUMNA) EN FILA PIVOTE :::::::::::
+            if(c == 0) {        //Se intercambia coef de a
+                System.out.println("ENTRA a EN FILA " + f);
+                varCoefMult.put(f, "a");
+                coefMult[f] = Cj[c];
+            } else if(c == 1){  //Se intercambia coef de b
+                System.out.println("ENTRA b EN FILA " + f);
+                varCoefMult.put(f, "b");
+                coefMult[f] = Cj[c];
+            } else if(c == 2){  //Se intercambia coef de c
+                System.out.println("ENTRA c EN FILA " + f);
+                varCoefMult.put(f, "c");
+                coefMult[f] = Cj[c];
+            } else if(c == 3){  //Se intercambia coef de d
+                System.out.println("ENTRA d EN FILA " + f);
+                varCoefMult.put(f, "d");
+                coefMult[f] = Cj[c];
+            } else {            //Se intercambia coef de variable de holgura (0)
+                System.out.println("ENTRA var de holgura EN FILA " + f);
+                varCoefMult.put(f, "h");
+                coefMult[f] = 0;
+            }
+            /*System.out.println("Nuevos coeficientes de coefMult:");
+            for(int i=0; i<coefMult.length; i++){
+                System.out.println("coefMult[" + i + "] = " + coefMult[i]);
+            }*/
+            
+            varCoefMult.entrySet().forEach((e) -> {
+                System.out.println("Fila " + e.getKey() + " --> " + e.getValue());
+            });
+            
+            //::::::::::: SE VERIFICA QUE NO EXISTEN NEGATIVOS EN VECTOR SOLUCIÓN :::::::::::
+            boolean banderaNeg = false;
+            System.out.println("Verificando si existen valores negativos en vector solución.");
+            for (int i = 0; i < CoefRestDer.length; i++) {
+                if( CoefRestDer[i] < 0.0) {
+                    System.out.println("Se encontraron valores negativos en el vector solución!");
+                    banderaNeg = true;
+                    break;
+                }
+            }
+            if(banderaNeg) { //Si se encontraron valores negativos en vectSol
+                simplex3(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, true, false);
+            } else {
+                simplex3(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, false, false);
+            }
             
             //simplex3.0();
         }
@@ -394,51 +449,59 @@ public class Solve {
      * @param coefMult Arreglo con los coeficientes de la función objetivo que van a estar intercambiandose.
      * @param r Número de restricciones.
      * @param op Minimizar/Maximixar función.
-     * @param coefEntra Valor del coeficiente de Cj que se intercambia en una determinada fila.
-     * @param filaCambio Fila donde se sustituirá el coeficiente de Cj en coefMult.
      * @param negativos Si existen valores negativos en el vector solución, se llama recursivamente a Simplex 3.0
      * @param iterInicial Valor booleano que indica si es la primera iteración del problema (primer tabla).
      */
-    public static void simplex2(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, double coefEntra, int filaCambio, boolean negativos, boolean iterInicial) {
+    public static void simplex2(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, boolean negativos, boolean iterInicial) {
         System.out.println("SIMPLEX 2.0");
+        if (iterInicial) {
+            for(double c: coefMult) {
+                c = (double)0;
+            }
+        }
         if(negativos) {
             //simplex3();
         } else {
-            //Inicia calculo de zj y cj-zj
-            //Si es la primera iteración, coeficientes de coefMult valen 0, no se realiza cambio
-            if(iterInicial) {
-                //System.out.println("No hay intercambio de filas, primera iteración.");
-            } else {
-                //System.out.println("Hay intercambio de filas.");
-            }
-            // Cálculo del vector Zj.
+            //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
+            
+            //::::::::::: CÁLCULO DE Zj :::::::::::
             double sumaZjCol = 0.0;
+            double Zj2[] = new double[Zj.length];
             for(int j =0; j<Zj.length; j++) {
                 for(int i=0; i<r ; i++) {
                     sumaZjCol += (coefMult[i])*(T[i][j]);
                 }
-                Zj[j] = sumaZjCol;
+                Zj2[j] = sumaZjCol;
+                sumaZjCol = 0.0;
             }
             /*for(int i =0; i< Zj.length; i++) {
-                System.out.println("Zj[" + i + "] = " + Zj[i]);
+                System.out.println("Zj2[" + i + "] = " + Zj2[i]);
             }*/
-            // Cálculo del valor de FO.
+            
+            //Asignamos los valores del arreglo Zj2 al arreglo Zj original, ya que se mostrará Zj
+            Zj = Zj2;
+            
+            //::::::::::: CÁLCULO DEL VALOR DE Z (FO) :::::::::::
             double zFinal= 0.0;
             for(int i =0; i<r; i++) {
                 zFinal += (coefMult[i])*(CoefRestDer[i]);
             }
             //System.out.println("Valor de zFinal = " + Zfinal);
             
-            //Calculo de Cj-Zj
+            //::::::::::: CÁLCULO DEL VALOR DE Cj-Zj :::::::::::
             for(int i=0; i<CjZj.length; i++) {
                 CjZj[i] = Cj[i] - Zj[i];
             }
             
-            //Una vez calculado Zj, Cj-Zj y zFinal, se muestran los datos de la iteración.
+            //::::::::::: SE MUESTRA ITERACIÓN :::::::::::
             mostrarIteracion(Cj, T, Zj, zFinal, CjZj, CoefRestDer);
             
             
-            
+            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
+            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
+            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
+            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
+            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
             
             //Si se desea maximizar
             if(op == 1) {
@@ -474,24 +537,24 @@ public class Solve {
         System.out.println("\ta\tb\tc\td");
         System.out.print("Cj");
         for(int i =0; i<Cj.length; i++) {
-            System.out.print("\t" + Cj[i]);
+            System.out.printf("\t%.2f", Cj[i]);
         }
         System.out.println("");
         for(int i =0; i<T.length; i++) {
             for(int j=0; j<T[i].length; j++) {
-                System.out.print("\t" + T[i][j]);
+                System.out.printf("\t%.2f", T[i][j]);
             }
-            System.out.println("\t" + coefRestDer[i]);
+            System.out.printf("\t%.2f\n", coefRestDer[i]);
         }
         System.out.print("Zj");
         for(int i=0; i<Zj.length; i++) {
-            System.out.print("\t" + Zj[i]);
+            System.out.printf("\t%.2f", Zj[i]);
         }
-        System.out.println("\t" + valFO);
+        System.out.printf("\t%.2f\n", valFO);
         
         System.out.print("Cj-Zj");
         for(int i =0; i<CjZj.length; i++) {
-            System.out.print("\t" + CjZj[i]);
+            System.out.printf("\t%.2f", CjZj[i]);
         }
         System.out.println("");
     }

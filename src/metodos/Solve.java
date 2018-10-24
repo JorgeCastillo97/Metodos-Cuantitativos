@@ -177,24 +177,24 @@ public class Solve {
      * @param coefMult Arreglo con los coeficientes de la función objetivo que van a estar intercambiandose.
      * @param r Número de restricciones.
      * @param op Minimizar/Maximixar función.
-     * @param negativos Si existen valores negativos en el vector solución, se llama recursivamente a Simplex 3.0,
+     * @param negativosVS Si existen valores negativos en el vector solución, se llama recursivamente a Simplex 3.0,
      * de lo contrario se llama a Simplex 2.0
      * @param iterInicial Valor booleano que indica si es la primera iteración del problema (primer tabla).
      */
-    public static void simplex3(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, boolean negativos, boolean iterInicial) {
+    public static void simplex3(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, boolean negativosVS, boolean iterInicial) {
         System.out.println("SIMPLEX 3.0");
         if (iterInicial) {
             for(double c: coefMult) {
                 c = (double)0;
             }
         }
-        if(!negativos) {
+        if(!negativosVS) {
             /*System.out.println("Termina metodo Simplex 3.0");
                 simplex2.0();
             */
             System.out.println("No hay negativos en vector solución!");
             System.out.println("CAMBIANDO A SIMPLEX 2.0...");
-            simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, negativos, iterInicial);
+            simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, negativosVS, iterInicial);
         } else {
             //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
             
@@ -227,7 +227,7 @@ public class Solve {
             
             //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
             
-            /*Se obtiene la fila con el coeficiente mas (-) en CoefRestDer
+            /*::::::::::::::    SE ELIGE LA FILA           ::::::::::::::
               Siempre se encontrará un valor negativo, ya que bandera negativos = true
             */
             int f=0;
@@ -239,7 +239,7 @@ public class Solve {
                     }
                 }
             }
-            System.out.println("Coeficiente mas negativo:" + neg);
+            System.out.println("Coeficiente mas negativo: " + neg);
             
             //::::::::::: SE ENCUENTRA LA POSICIÓN DE LA FILA :::::::::::
             for(int i=0; i<CoefRestDer.length; i++) {
@@ -449,17 +449,18 @@ public class Solve {
      * @param coefMult Arreglo con los coeficientes de la función objetivo que van a estar intercambiandose.
      * @param r Número de restricciones.
      * @param op Minimizar/Maximixar función.
-     * @param negativos Si existen valores negativos en el vector solución, se llama recursivamente a Simplex 3.0
+     * @param negativosVS Si existen valores negativos en el vector solución, se llama recursivamente a Simplex 3.0
      * @param iterInicial Valor booleano que indica si es la primera iteración del problema (primer tabla).
      */
-    public static void simplex2(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, boolean negativos, boolean iterInicial) {
+    public static void simplex2(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, boolean negativosVS, boolean iterInicial) {
         System.out.println("SIMPLEX 2.0");
+        
         if (iterInicial) {
             for(double c: coefMult) {
                 c = (double)0;
             }
         }
-        if(negativos) {
+        if(negativosVS) {
             //simplex3();
         } else {
             //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
@@ -494,25 +495,559 @@ public class Solve {
             }
             
             //::::::::::: SE MUESTRA ITERACIÓN :::::::::::
+            System.out.println("Iteración antes de modificación de tabla");
             mostrarIteracion(Cj, T, Zj, zFinal, CjZj, CoefRestDer);
             
             
             //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
-            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
-            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
-            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
-            //::::::::::::::    MODIFICACIÓN TABLA ORIGINAL           ::::::::::::::
             
-            //Si se desea maximizar
-            if(op == 1) {
+            if(op == 1) {   //Si se desea maximizar
+                
+                //::::::::::: SE ELIGE LA COLUMNA :::::::::::
+                
+                //Columna mas (+) en Cj-Zj
+                double positivo=0;
+                int c=0, f=0;
+                for(int i=0; i<CjZj.length; i++) {
+                    if(CjZj[i] > 0) {
+                        if (CjZj[i] > positivo) {
+                            positivo = CjZj[i];
+                        }
+                    }
+                }
+                
+                //::::::::::: SE VERIFICA QUE EXISTA COEFICIENTE (+) EN Cj-Zj, DE LO CONTRARIO NO HAY CRITERIO DE ELECCIÓN DE COLUMNA :::::::::::
+                if(positivo == 0) { //Si es 0, no se hayaron (-) en Cj-Zj
+                    System.out.println("No hay criterio de elección de columna, no hay coeficientes (+) en Cj-Zj");
+                    System.out.println("Solución interrumpida!");
+                    System.exit(0);
+                }
+                System.out.println("Coeficiente más (+) en Cj-Zj: " + positivo);
+                
+                //::::::::::: SE ENCUENTRA LA POSICIÓN DE LA COLUMNA :::::::::::
+                for(int i=0; i<CoefRestDer.length; i++) {
+                    if(CoefRestDer[i] == positivo) {
+                        c = i;
+                    }
+                }
+                System.out.println("Encontrado en columna: " + c);
+                
+                /*Se guardan los coeficientes de la columna elegida*/
+                double colEleg[] = new double[r];
+                for(int i =0; i<r; i++) {
+                    colEleg[i] = T[i][c];
+                }
+                
+                /*System.out.println("COEFICIENTES COLUMNA ELEGIDA");
+                for(double v : colEleg) {
+                    System.out.println(v);
+                }*/
+                
+                //::::::::::: SE ENCUENTRA EL MENOR COEFICIENTE (+) VecSol / colElegida :::::::::::
+                //::::::::::: SE DIVIDE VEC-SOL/ COLUMNA ELEGIDA. :::::::::::
+                double cociente[] = new double[r];
+                for(int i =0; i<r; i++) {
+                    //Si existe división 0/0
+                    if(Math.abs(colEleg[i]) == 0.0 && Math.abs(CoefRestDer[i]) == 0.0) {
+                        colEleg[i] = CoefRestDer[i]= cociente[i] = 0;
+                    } else if(Math.abs(colEleg[i]) == 0.0 && Math.abs(CoefRestDer[i]) != 0.0) {
+                        //Divison c/0.
+                        /*filEleg[i] = 0;
+                        CjZj[i] = 0;*/
+                        cociente[i] = M;
+                    } else {
+                        cociente[i] = CoefRestDer[i] / colEleg[i];  
+                    }
+                }
+                for(double v : cociente) {
+                    System.out.println(v);
+                }
+
+                //::::::::::: FILTRACIÓN DE COCIENTES DISTINTOS DE 0 E INFINITO (M) :::::::::::
+                ArrayList<Double> filtrados = new ArrayList<>();
+                for(int i =0; i<cociente.length; i++) {
+                    if(cociente[i] != 0.0 && cociente[i] != M) {
+                        filtrados.add(cociente[i]);
+                    }
+                }
+
+                //Coeficientes filtrados
+                System.out.println("Cocientes filtrados distintos de cero e infinito:");
+                filtrados.forEach((fil) -> {
+                    System.out.println(fil); 
+                });
+                
+                //::::::::::: SE FILTRAN COCIENTES POSITIVOS :::::::::::
+                ArrayList<Double> filtradosPos = new ArrayList<>();
+                for(int i =0; i<filtrados.size(); i++) {
+                    if(filtrados.get(i) > 0) {
+                        filtradosPos.add(filtrados.get(i));
+                    }
+                }
+                
+                //::::::::::: SE VERIFICA SI SE AGREGARON COEF [+) :::::::::::
+                if(filtradosPos.isEmpty()) {
+                    System.out.println("No existen coeficientes positivos, no hay criterio para seleccionar fila!");
+                    System.exit(0);
+                }
+                
+                System.out.println("Cocientes positivos filtrados");
+                for(double v : filtradosPos) {
+                    System.out.println(v);
+                }
+            
+                //::::::::::: SE ELIGE LA FILA :::::::::::
+                
+                //Menor cociente (+)
+                double min = filtradosPos.get(0);
+                for(int i = 1; i<filtradosPos.size(); i++) {
+                    if(filtradosPos.get(i) < min) {
+                        min = filtradosPos.get(i);
+                    }
+                }
+                System.out.println("Menor coeficiente (+): " + min);
+                //Se encuentra la posición de la fila.
+                for(int i=0; i<cociente.length; i++) {
+                    if(cociente[i] == min) {
+                        f = i;
+                        break;
+                    }
+                }
+                System.out.println("Encontrado en fila: " + f);
+                
+                double pivote = T[f][c];
+                double reciproco = 1/pivote;
+                System.out.println("Valor pivote = " + pivote);
+
+                //::::::::::: OBTENEMOS FILA UNITARIA :::::::::::
+                double filU[] = new double[4+r];
+                for(int i=0; i<filU.length; i++) {
+                    filU[i] = T[f][i]*reciproco;
+                }
+
+                /*System.out.println("Fila Unitaria");
+                for(int i=0; i<filU.length; i++) {
+                    System.out.println("filU[" + i + "] = " + filU[i]);
+                }*/
+
+                //::::::::::: OBTENEMOS COEFICIENTES DE COLUMNA PIVOTE :::::::::::
+                double coefsColPiv[] = new double[r];
+                for(int i=0; i<r; i++) {
+                    coefsColPiv[i] = T[i][c];
+                }
+                /*System.out.println("Coeficientes columna pivote");
+                for(double val: coefsColPiv){
+                    System.out.println(val);
+                }*/
+
+                //::::::::::: OBTENEMOS COEFICIENTES CONJUGADOS DE COLUMNA PIVOTE :::::::::::
+                double coefsColConj [] = new double[coefsColPiv.length];
+
+                //::::::::::: SETEAMOS LA UNIDAD EN FILA PIVOTE :::::::::::
+                coefsColConj[f] = pivote*reciproco;
+                for(int i=0; i<r; i++) {
+                    if(i != f){
+                        coefsColConj[i] = (-1.0)*(coefsColPiv[i]);
+                    }
+                }
+
+                /*System.out.println("Coeficientes columna pivote conjugados");
+                for(int i=0; i<coefsColConj.length; i++) {
+                    System.out.println("coefsColConj[" + i + "] = " + coefsColConj[i]);
+                }*/
+
+                //::::::::::: REEMPLAZO DE LA FILA UNITARIA EN TABLA ORIGINAL :::::::::::
+                T[f] = filU;
+                /*System.out.println("Nueva tabla con fila unitaria");
+                for(double [] fi: T){
+                    for(double v : fi){
+                        System.out.print("\t" + v);
+                    }
+                    System.out.println("");
+                }*/
+
+                //::::::::::: HACEMOS 0 LOS COEFICIENTES DE LA COLUMNA PIVOTE :::::::::::
+                for(int i=0; i<r; i++) {
+                    for(int j =0; j<Cj.length; j++){
+                        if(i != f){ //Mientras no sea la fila pivote
+                            T[i][j] = ((coefsColConj[i])*(filU[j])) + T[i][j];
+                        }
+                    }
+                }
+
+                /*System.out.println("Nueva tabla obtenida con columna pivote en 0");
+                for(double[] fil: T){
+                    for(double val : fil){
+                        System.out.print("\t" + val);
+                    }
+                    System.out.println("");
+                }*/
+
+                //::::::::::: CALCULO DE LOS NUEVOS VALORES DEL VECTOR SOLUCIÓN :::::::::::
+                CoefRestDer[f] = CoefRestDer[f]*reciproco;
+                System.out.println("NUEVO CoefRestDer: " + CoefRestDer[f] );
+
+                for(int i =0; i<CoefRestDer.length; i++) {
+                    if( i != f) { //Mientras no sea la fila pivote
+                        CoefRestDer[i] = (coefsColConj[i])*(CoefRestDer[f]) + CoefRestDer[i];
+                    }
+                }
+                System.out.println("Nuevos coeficientes vector solución");
+                for(int i =0; i<CoefRestDer.length; i++) {
+                    System.out.println("CoefRestDer[" + i + "] = " + CoefRestDer[i]);
+                }
+                
+                //::::::::::: SE INTERCAMBIA COEFICIENTE DE Cj (COLUMNA) EN FILA PIVOTE :::::::::::
+                if(c == 0) {        //Se intercambia coef de a
+                    System.out.println("ENTRA a EN FILA " + f);
+                    varCoefMult.put(f, "a");
+                    coefMult[f] = Cj[c];
+                } else if(c == 1){  //Se intercambia coef de b
+                    System.out.println("ENTRA b EN FILA " + f);
+                    varCoefMult.put(f, "b");
+                    coefMult[f] = Cj[c];
+                } else if(c == 2){  //Se intercambia coef de c
+                    System.out.println("ENTRA c EN FILA " + f);
+                    varCoefMult.put(f, "c");
+                    coefMult[f] = Cj[c];
+                } else if(c == 3){  //Se intercambia coef de d
+                    System.out.println("ENTRA d EN FILA " + f);
+                    varCoefMult.put(f, "d");
+                    coefMult[f] = Cj[c];
+                } else {            //Se intercambia coef de variable de holgura (0)
+                    System.out.println("ENTRA var de holgura EN FILA " + f);
+                    varCoefMult.put(f, "h");
+                    coefMult[f] = 0;
+                }
+                /*System.out.println("Nuevos coeficientes de coefMult:");
+                for(int i=0; i<coefMult.length; i++){
+                    System.out.println("coefMult[" + i + "] = " + coefMult[i]);
+                }*/
+
+                varCoefMult.entrySet().forEach((e) -> {
+                    System.out.println("Fila " + e.getKey() + " --> " + e.getValue());
+                });
+                
+                
+                //::::::::::: CALCULAMOS Zj y Cj-Zj con los nuevos coeficientes de intercambio :::::::::::
+                
+                
+                
+                //::::::::::: VERIFICACIÓN DE CONDICIONES PARA LLAMADA RECURSIVA S 2.0 :::::::::::
+                //:::::::::::                       MAX                                :::::::::::
+                
+                //::::::::::: SE VERIFICA QUE NO EXISTEN NEGATIVOS EN VECTOR SOLUCIÓN :::::::::::
+                System.out.println("Iteración antes de verificación en S 2.0");
+                mostrarIteracion(Cj, T, Zj, min, CjZj, CoefRestDer);
+                boolean banderaNeg = false;
+                System.out.println("Verificando si existen valores negativos en vector solución.");
+                for (int i = 0; i < CoefRestDer.length; i++) {
+                    if( CoefRestDer[i] < 0.0) {
+                        System.out.println("Se encontraron valores negativos en el vector solución!");
+                        banderaNeg = true;
+                        break;
+                    }
+                }
+                
+                if(banderaNeg == false) {
+                    //No hay coeficientes negativos en vector Solución
+                    System.out.println("No se encontraron valores negativos en el vector solución");
+                    
+                    System.out.println("Verificando si existen (+) en Cj-Zj...");
+                    boolean p = false;
+                    for(int i =0; i<CjZj.length; i++){
+                        if(CjZj[i] > 0.0){ p=true; break;}
+                    }
+                    if(p){
+                        System.out.println("Existen (+) en Cj-Zj");
+                        simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, false, false);
+                    } else {
+                        System.out.println("NO existen (+) en Cj-Zj");
+                    }
+                    
+                } else {
+                    //Hay coeficientes negativos en vector Solución
+                    //simplex 3.0(); con bandera negativosVS = True;
+                    
+                }
+                
+                
+                
                 /*Se verifica que no existan (+) en Zj
                     if se encuentran (+) en Zj
                         simplex2();
                     else
                         Termina metodo!
                 */
-            } else {
-            //Si se desea minimizar
+            } else {        //Si se desea minimizar
+                
+                //::::::::::: SE ELIGE LA COLUMNA :::::::::::
+                
+                //Columna mas (-) en Cj-Zj
+                double negativo=0;
+                int c=0, f=0;
+                for(int i=0; i<CjZj.length; i++) {
+                    if(CjZj[i] < 0) {
+                        if (CjZj[i] < negativo) {
+                            negativo = CjZj[i];
+                        }
+                    }
+                }
+                
+                //::::::::::: SE VERIFICA QUE EXISTA COEFICIENTE (-) EN Cj-Zj, DE LO CONTRARIO NO HAY CRITERIO DE ELECCIÓN DE COLUMNA :::::::::::
+                if(negativo == 0) { //Si es 0, no se hayaron (-) en Cj-Zj
+                    System.out.println("No hay criterio de elección de columna, no hay coeficientes (-) en Cj-Zj");
+                    System.out.println("Solución interrumpida!");
+                    System.exit(0);
+                }
+                System.out.println("Coeficiente más (-) en Cj-Zj: " + negativo);
+                
+                //::::::::::: SE ENCUENTRA LA POSICIÓN DE LA FILA :::::::::::
+                for(int i=0; i<CoefRestDer.length; i++) {
+                    if(CoefRestDer[i] == negativo) {
+                        c = i;
+                    }
+                }
+                System.out.println("Encontrado en columna: " + c);
+                
+                /*Se guardan los coeficientes de la columna elegida*/
+                double colEleg[] = new double[r];
+                for(int i =0; i<r; i++) {
+                    colEleg[i] = T[i][c];
+                }
+                
+                /*System.out.println("COEFICIENTES COLUMNA ELEGIDA");
+                for(double v : colEleg) {
+                    System.out.println(v);
+                }*/
+                
+                //::::::::::: SE ENCUENTRA EL MENOR COEFICIENTE (+) VecSol / colElegida :::::::::::
+                //::::::::::: SE DIVIDE VEC-SOL/ COLUMNA ELEGIDA. :::::::::::
+                double cociente[] = new double[r];
+                for(int i =0; i<r; i++) {
+                    //Si existe división 0/0
+                    if(Math.abs(colEleg[i]) == 0.0 && Math.abs(CoefRestDer[i]) == 0.0) {
+                        colEleg[i] = CoefRestDer[i]= cociente[i] = 0;
+                    } else if(Math.abs(colEleg[i]) == 0.0 && Math.abs(CoefRestDer[i]) != 0.0) {
+                        //Divison c/0.
+                        /*filEleg[i] = 0;
+                        CjZj[i] = 0;*/
+                        cociente[i] = M;
+                    } else {
+                        cociente[i] = CoefRestDer[i] / colEleg[i];  
+                    }
+                }
+                for(double v : cociente) {
+                    System.out.println(v);
+                }
+
+                //::::::::::: FILTRACIÓN DE COCIENTES DISTINTOS DE 0 E INFINITO (M) :::::::::::
+                ArrayList<Double> filtrados = new ArrayList<>();
+                for(int i =0; i<cociente.length; i++) {
+                    if(cociente[i] != 0.0 && cociente[i] != M) {
+                        filtrados.add(cociente[i]);
+                    }
+                }
+
+                //Coeficientes filtrados
+                System.out.println("Cocientes filtrados distintos de cero e infinito:");
+                filtrados.forEach((fil) -> {
+                    System.out.println(fil); 
+                });
+                
+                //::::::::::: SE FILTRAN COCIENTES POSITIVOS :::::::::::
+                ArrayList<Double> filtradosPos = new ArrayList<>();
+                for(int i =0; i<filtrados.size(); i++) {
+                    if(filtrados.get(i) > 0) {
+                        filtradosPos.add(filtrados.get(i));
+                    }
+                }
+                
+                //::::::::::: SE VERIFICA SI SE AGREGARON COEF [+) :::::::::::
+                if(filtradosPos.isEmpty()) {
+                    System.out.println("No existen coeficientes positivos, no hay criterio para seleccionar fila!");
+                    System.exit(0);
+                }
+                
+                System.out.println("Cocientes positivos filtrados");
+                for(double v : filtradosPos) {
+                    System.out.println(v);
+                }
+            
+                //::::::::::: SE ELIGE LA FILA :::::::::::
+                
+                //Menor cociente (+)
+                double min = filtradosPos.get(0);
+                for(int i = 1; i<filtradosPos.size(); i++) {
+                    if(filtradosPos.get(i) < min) {
+                        min = filtradosPos.get(i);
+                    }
+                }
+                System.out.println("Menor coeficiente (+): " + min);
+                //Se encuentra la posición de la fila.
+                for(int i=0; i<cociente.length; i++) {
+                    if(cociente[i] == min) {
+                        f = i;
+                        break;
+                    }
+                }
+                System.out.println("Encontrado en fila: " + f);
+                
+                double pivote = T[f][c];
+                double reciproco = 1/pivote;
+                System.out.println("Valor pivote = " + pivote);
+
+                //::::::::::: OBTENEMOS FILA UNITARIA :::::::::::
+                double filU[] = new double[4+r];
+                for(int i=0; i<filU.length; i++) {
+                    filU[i] = T[f][i]*reciproco;
+                }
+
+                /*System.out.println("Fila Unitaria");
+                for(int i=0; i<filU.length; i++) {
+                    System.out.println("filU[" + i + "] = " + filU[i]);
+                }*/
+
+                //::::::::::: OBTENEMOS COEFICIENTES DE COLUMNA PIVOTE :::::::::::
+                double coefsColPiv[] = new double[r];
+                for(int i=0; i<r; i++) {
+                    coefsColPiv[i] = T[i][c];
+                }
+                /*System.out.println("Coeficientes columna pivote");
+                for(double val: coefsColPiv){
+                    System.out.println(val);
+                }*/
+
+                //::::::::::: OBTENEMOS COEFICIENTES CONJUGADOS DE COLUMNA PIVOTE :::::::::::
+                double coefsColConj [] = new double[coefsColPiv.length];
+
+                //::::::::::: SETEAMOS LA UNIDAD EN FILA PIVOTE :::::::::::
+                coefsColConj[f] = pivote*reciproco;
+                for(int i=0; i<r; i++) {
+                    if(i != f){
+                        coefsColConj[i] = (-1.0)*(coefsColPiv[i]);
+                    }
+                }
+
+                /*System.out.println("Coeficientes columna pivote conjugados");
+                for(int i=0; i<coefsColConj.length; i++) {
+                    System.out.println("coefsColConj[" + i + "] = " + coefsColConj[i]);
+                }*/
+
+                //::::::::::: REEMPLAZO DE LA FILA UNITARIA EN TABLA ORIGINAL :::::::::::
+                T[f] = filU;
+                /*System.out.println("Nueva tabla con fila unitaria");
+                for(double [] fi: T){
+                    for(double v : fi){
+                        System.out.print("\t" + v);
+                    }
+                    System.out.println("");
+                }*/
+
+                //::::::::::: HACEMOS 0 LOS COEFICIENTES DE LA COLUMNA PIVOTE :::::::::::
+                for(int i=0; i<r; i++) {
+                    for(int j =0; j<Cj.length; j++){
+                        if(i != f){ //Mientras no sea la fila pivote
+                            T[i][j] = ((coefsColConj[i])*(filU[j])) + T[i][j];
+                        }
+                    }
+                }
+
+                /*System.out.println("Nueva tabla obtenida con columna pivote en 0");
+                for(double[] fil: T){
+                    for(double val : fil){
+                        System.out.print("\t" + val);
+                    }
+                    System.out.println("");
+                }*/
+
+                //::::::::::: CALCULO DE LOS NUEVOS VALORES DEL VECTOR SOLUCIÓN :::::::::::
+                CoefRestDer[f] = CoefRestDer[f]*reciproco;
+                System.out.println("NUEVO CoefRestDer: " + CoefRestDer[f] );
+
+                for(int i =0; i<CoefRestDer.length; i++) {
+                    if( i != f) { //Mientras no sea la fila pivote
+                        CoefRestDer[i] = (coefsColConj[i])*(CoefRestDer[f]) + CoefRestDer[i];
+                    }
+                }
+                System.out.println("Nuevos coeficientes vector solución");
+                for(int i =0; i<CoefRestDer.length; i++) {
+                    System.out.println("CoefRestDer[" + i + "] = " + CoefRestDer[i]);
+                }
+                
+                //::::::::::: SE INTERCAMBIA COEFICIENTE DE Cj (COLUMNA) EN FILA PIVOTE :::::::::::
+                if(c == 0) {        //Se intercambia coef de a
+                    System.out.println("ENTRA a EN FILA " + f);
+                    varCoefMult.put(f, "a");
+                    coefMult[f] = Cj[c];
+                } else if(c == 1){  //Se intercambia coef de b
+                    System.out.println("ENTRA b EN FILA " + f);
+                    varCoefMult.put(f, "b");
+                    coefMult[f] = Cj[c];
+                } else if(c == 2){  //Se intercambia coef de c
+                    System.out.println("ENTRA c EN FILA " + f);
+                    varCoefMult.put(f, "c");
+                    coefMult[f] = Cj[c];
+                } else if(c == 3){  //Se intercambia coef de d
+                    System.out.println("ENTRA d EN FILA " + f);
+                    varCoefMult.put(f, "d");
+                    coefMult[f] = Cj[c];
+                } else {            //Se intercambia coef de variable de holgura (0)
+                    System.out.println("ENTRA var de holgura EN FILA " + f);
+                    varCoefMult.put(f, "h");
+                    coefMult[f] = 0;
+                }
+                /*System.out.println("Nuevos coeficientes de coefMult:");
+                for(int i=0; i<coefMult.length; i++){
+                    System.out.println("coefMult[" + i + "] = " + coefMult[i]);
+                }*/
+
+                varCoefMult.entrySet().forEach((e) -> {
+                    System.out.println("Fila " + e.getKey() + " --> " + e.getValue());
+                });
+                
+                //::::::::::: VERIFICACIÓN DE CONDICIONES PARA LLAMADA RECURSIVA S 2.0 :::::::::::
+                //:::::::::::                       MIN                                :::::::::::
+                
+                //::::::::::: SE VERIFICA QUE NO EXISTEN NEGATIVOS EN VECTOR SOLUCIÓN :::::::::::
+                boolean banderaNeg = false;
+                System.out.println("Verificando si existen valores negativos en vector solución.");
+                for (int i = 0; i < CoefRestDer.length; i++) {
+                    if( CoefRestDer[i] < 0.0) {
+                        System.out.println("Se encontraron valores negativos en el vector solución!");
+                        banderaNeg = true;
+                        break;
+                    }
+                }
+                if(banderaNeg == false) {
+                    System.out.println("No se encontraron valores negativos en el vector solución");
+                    
+                    System.out.println("Verificando si existen (-) en Cj-Zj...");
+                    boolean n = false;
+                    for(int i =0; i<CjZj.length; i++){
+                        if(CjZj[i] < 0.0){ n=true; break;}
+                    }
+                    if(n){
+                        System.out.println("Existen (-) en Cj-Zj");
+                        simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, false, false);
+                    } else {
+                        System.out.println("NO existen (-) en Cj-Zj");
+                        System.out.println("############# Termina solución de Problema #############");
+                        mostrarIteracion(Cj, T, Zj, min, CjZj, CoefRestDer);
+                        varCoefMult.entrySet().forEach((e) -> {
+                            System.out.println("Fila " + e.getKey() + "variable " + e.getValue());
+                        });
+                        System.exit(0);
+                    }
+                    
+                } else {
+                    //Hay coeficientes negativos en vector Solución
+                    //simplex 3.0(); con bandera negativosVS = True;
+                }
+                
+                
+                
+                
                 /*Se verifica que no existan (-) en Zj
                     if se encuentran (-) en Zj
                         simplex2();

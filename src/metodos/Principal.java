@@ -134,6 +134,7 @@ public class Principal {
             matH = crearMatrizHolgura(fil-1);
             
             Solve solver = new Solve(op, funObjetivo, coefFuncObjDec, matH.length, tabla, coefRest, matH);
+            solver.solve();
             
         } catch (FileNotFoundException e) {
             System.err.println("Archivo no encontrado.");

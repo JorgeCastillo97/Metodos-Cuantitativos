@@ -48,10 +48,17 @@ public class Solve {
         this.matHolgura = matH;
         this.varCoefMult = new HashMap<>(restricciones);
         System.out.println("Recibiendo datos...");
-        Cj = getCj(coefFuncObj,numR);
-        Solve.tabla = getTablaToSolve(Solve.coefRest, matHolgura,numR );
+        
         mostrarDatos();
         
+    }
+    
+    /**
+     * Se inicia la solución del P.P.L.
+     */
+    public void solve(){
+        Cj = getCj(coefFuncObj,numR);
+        Solve.tabla = getTablaToSolve(Solve.coefRest, matHolgura,numR );
         //Se crea el arreglo Zj.
         double Zj[] = new double[numR+4];
         //El valor final de la funcion objetivo es calculado independientemente.
@@ -83,7 +90,7 @@ public class Solve {
             Zj = getZjInicio(Zj.length, numR, coefMult, Solve.tabla);
             CjZj = getCjZjInicio(Cj, Zj);
                     
-            System.out.println("cF3 = False, se llama a simplex 2.0 desde constructor.");
+            //System.out.println("cF3 = False, se llama a simplex 2.0 desde constructor.");
             simplex2(Solve.tabla, Cj, coefRestDer,Zj, CjZj, coefMult, zFinal ,numR, Solve.op, false, true, false);
         }
     }
@@ -876,8 +883,6 @@ public class Solve {
                     simplex3(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, true, false);
                 }
                 
-                
-                
                 /*Se verifica que no existan (+) en Zj
                     if se encuentran (+) en Zj
                         simplex2();
@@ -908,9 +913,10 @@ public class Solve {
                 System.out.println("Coeficiente más (-) en Cj-Zj: " + negativo);
                 
                 //::::::::::: SE ENCUENTRA LA POSICIÓN DE LA FILA :::::::::::
-                for(int i=0; i<CoefRestDer.length; i++) {
-                    if(CoefRestDer[i] == negativo) {
-                        c = i;
+                for(int j=0; j<CjZj.length; j++) {
+                    if(CjZj[j] == negativo) {
+                        c = j;
+                         break;
                     }
                 }
                 System.out.println("Encontrado en columna: " + c);
@@ -1189,9 +1195,6 @@ public class Solve {
                     System.out.println("CAMBIANDO A SIMPLEX 3.0...");
                     simplex3(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, true, false);
                 }
-                
-                
-                
                 
                 /*Se verifica que no existan (-) en Zj
                     if se encuentran (-) en Zj

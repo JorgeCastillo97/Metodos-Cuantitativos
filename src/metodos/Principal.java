@@ -30,7 +30,7 @@ public class Principal {
         System.out.println("4) Problema D");
         System.out.println("5) Problema E");    //Problema con Resolución Simplex 2.0
         file = teclado.nextByte();
-        System.out.println("1) Minimizar \n2) Maximizar");
+        System.out.println("1) Maximizar \n2) Minimizar");
         op = teclado.nextByte();
         try {
             switch(file) {

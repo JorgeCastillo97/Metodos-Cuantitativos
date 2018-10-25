@@ -50,7 +50,7 @@ public class Solve {
         System.out.println("Recibiendo datos...");
         Cj = getCj(coefFuncObj,numR);
         Solve.tabla = getTablaToSolve(Solve.coefRest, matHolgura,numR );
-        //mostarDatos();
+        mostrarDatos();
         
         //Se crea el arreglo Zj.
         double Zj[] = new double[numR+4];
@@ -78,14 +78,56 @@ public class Solve {
             simplex3(Solve.tabla, Cj, coefRestDer, Zj, CjZj, coefMult, numR, Solve.op, true, true);
         } else {
             System.out.println("NO existen coeficientes negativos en el vector solución!");
-            simplex2(Solve.tabla, Cj, coefRestDer,Zj, CjZj, coefMult, numR, Solve.op, false,true);
+            //llamar a actualizaZj() y actualizaCj-Zj(); 
+            double zFinal = getzFinalInicio(numR,coefMult,coefRestDer);
+            Zj = getZjInicio(Zj.length, numR, coefMult, Solve.tabla);
+            CjZj = getCjZjInicio(Cj, Zj);
+                    
+            System.out.println("cF3 = False, se llama a simplex 2.0 desde constructor.");
+            simplex2(Solve.tabla, Cj, coefRestDer,Zj, CjZj, coefMult, zFinal ,numR, Solve.op, false, true, false);
         }
+    }
+    
+    /**
+     * Calcula el valor inicial de la función objetivo cuando es llamado simplex 2 desde el constructor
+     * @param r Número de restricciones.
+     * @param coefMult Coeficientes intercambiados por coeficientes de Cj.
+     * @param coefRestDer Coeficientes de lado derecho de las restricciones.
+     * @return Valor inicial de la FO cuando simplex 2 es llamado desde el constructor.
+     */
+    public static double getzFinalInicio(int r, double[] coefMult, double [] coefRestDer) {
+        double zFinal= 0.0;
+            for(int i =0; i<r; i++) {
+                zFinal += (coefMult[i])*(coefRestDer[i]);
+            }
+            return zFinal;
+    }
+    
+    public static double[] getZjInicio(int ZjL, int r, double [] coefMult, double [][] T) {
+        double sumaZjCol = 0.0;
+        double Zj2[] = new double[ZjL];
+        for(int j =0; j<ZjL; j++) {
+            for(int i=0; i<r ; i++) {
+                sumaZjCol += (coefMult[i])*(T[i][j]);
+            }
+            Zj2[j] = sumaZjCol;
+            sumaZjCol = 0.0;
+        }
+        return Zj2;
+    }
+    
+    public static double[] getCjZjInicio(double[] Cj, double [] Zj) {
+        double CjZj[] = new double[Cj.length];
+        for(int i=0; i<CjZj.length; i++) {
+            CjZj[i] = Cj[i] - Zj[i];
+        }
+        return CjZj;
     }
     
     /**
      * Muestra los datos obtenidos del archivo leido.
      */
-    public static void mostarDatos() {
+    public static void mostrarDatos() {
         System.out.println(":::::::::::::::FUNCIÓN OBJETIVO:::::::::::::::");
         if (op == 1) {
             System.out.print("Max z=");
@@ -194,7 +236,14 @@ public class Solve {
             */
             System.out.println("No hay negativos en vector solución!");
             System.out.println("CAMBIANDO A SIMPLEX 2.0...");
-            simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, negativosVS, iterInicial);
+            
+            //::::::::::: CÁLCULO DEL VALOR DE Z (FO) :::::::::::
+            double zFinal= 0.0;
+            for(int i =0; i<r; i++) {
+                zFinal += (coefMult[i])*(CoefRestDer[i]);
+            }
+            
+            simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, zFinal ,r, op, negativosVS, iterInicial, true);
         } else {
             //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
             
@@ -447,14 +496,15 @@ public class Solve {
      * @param Zj Arreglo con los coeficientes de Zj.
      * @param CjZj Arreglo con los coeficientes de Cj-Zj.
      * @param coefMult Arreglo con los coeficientes de la función objetivo que van a estar intercambiandose.
+     * @param zFinal último valor de FO calculado
      * @param r Número de restricciones.
      * @param op Minimizar/Maximixar función.
      * @param negativosVS Si existen valores negativos en el vector solución, se llama recursivamente a Simplex 3.0
      * @param iterInicial Valor booleano que indica si es la primera iteración del problema (primer tabla).
+     * @param cF3 Valor booleano que indica is se deberá actualizar Zj y Cj-Zj
      */
-    public static void simplex2(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], int r, int op, boolean negativosVS, boolean iterInicial) {
+    public static void simplex2(double T[][], double Cj[],double CoefRestDer[], double Zj[], double CjZj[], double coefMult[], double zFinal, int r, int op, boolean negativosVS, boolean iterInicial, boolean cF3) {
         System.out.println("SIMPLEX 2.0");
-        
         if (iterInicial) {
             for(double c: coefMult) {
                 c = (double)0;
@@ -463,35 +513,46 @@ public class Solve {
         if(negativosVS) {
             //simplex3();
         } else {
-            //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
-            
-            //::::::::::: CÁLCULO DE Zj :::::::::::
-            double sumaZjCol = 0.0;
-            double Zj2[] = new double[Zj.length];
-            for(int j =0; j<Zj.length; j++) {
-                for(int i=0; i<r ; i++) {
-                    sumaZjCol += (coefMult[i])*(T[i][j]);
+            //Si la llamada se hizo desde S 3.0
+            if(cF3) {
+                System.out.println("Se actualizará Zj y Cj-Zj, la llamada se hizo desde S 3.0");
+                
+                //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
+                //System.out.println("Se actualiza Zj y Cj-Zj");
+                //::::::::::: CÁLCULO DE Zj :::::::::::
+                double sumaZjCol = 0.0;
+                double Zj2[] = new double[Zj.length];
+                for(int j =0; j<Zj.length; j++) {
+                    for(int i=0; i<r ; i++) {
+                        sumaZjCol += (coefMult[i])*(T[i][j]);
+                    }
+                    Zj2[j] = sumaZjCol;
+                    sumaZjCol = 0.0;
                 }
-                Zj2[j] = sumaZjCol;
-                sumaZjCol = 0.0;
+                /*for(int i =0; i< Zj.length; i++) {
+                    System.out.println("Zj2[" + i + "] = " + Zj2[i]);
+                }*/
+
+                //Asignamos los valores del arreglo Zj2 al arreglo Zj original, ya que se mostrará Zj
+                Zj = Zj2;
+
+                //::::::::::: CÁLCULO DEL VALOR DE Cj-Zj :::::::::::
+                for(int i=0; i<CjZj.length; i++) {
+                    CjZj[i] = Cj[i] - Zj[i];
+                }
+                //::::::::::: CÁLCULO DEL VALOR DE Z (FO) :::::::::::
+                double zFinalcF3=0;
+                for(int i =0; i<r; i++) {
+                    zFinalcF3 += (coefMult[i])*(CoefRestDer[i]);
+                }
+                System.out.println("Valor de zFinal3 = " + zFinalcF3);
+                
+                zFinal = zFinalcF3;
+                System.out.println("Zj y Cj-Zj actualizados");
+                System.out.println("------------");
             }
-            /*for(int i =0; i< Zj.length; i++) {
-                System.out.println("Zj2[" + i + "] = " + Zj2[i]);
-            }*/
-            
-            //Asignamos los valores del arreglo Zj2 al arreglo Zj original, ya que se mostrará Zj
-            Zj = Zj2;
-            
-            //::::::::::: CÁLCULO DEL VALOR DE Z (FO) :::::::::::
-            double zFinal= 0.0;
-            for(int i =0; i<r; i++) {
-                zFinal += (coefMult[i])*(CoefRestDer[i]);
-            }
-            //System.out.println("Valor de zFinal = " + Zfinal);
-            
-            //::::::::::: CÁLCULO DEL VALOR DE Cj-Zj :::::::::::
-            for(int i=0; i<CjZj.length; i++) {
-                CjZj[i] = Cj[i] - Zj[i];
+            else {
+                System.out.println("No se actualizan Zj y Cj-Zj, la llamada se hizo desde S 2.0");
             }
             
             //::::::::::: SE MUESTRA ITERACIÓN :::::::::::
@@ -525,9 +586,10 @@ public class Solve {
                 System.out.println("Coeficiente más (+) en Cj-Zj: " + positivo);
                 
                 //::::::::::: SE ENCUENTRA LA POSICIÓN DE LA COLUMNA :::::::::::
-                for(int i=0; i<CoefRestDer.length; i++) {
-                    if(CoefRestDer[i] == positivo) {
-                        c = i;
+                for(int j=0; j<CjZj.length; j++) {
+                    if(CjZj[j] == positivo) {
+                        c = j;
+                         break;
                     }
                 }
                 System.out.println("Encontrado en columna: " + c);
@@ -729,16 +791,50 @@ public class Solve {
                 });
                 
                 
-                //::::::::::: CALCULAMOS Zj y Cj-Zj con los nuevos coeficientes de intercambio :::::::::::
                 
+                //::::::::::: CALCULAMOS Zj y Cj-Zj con los nuevos coeficientes de intercambio :::::::::::
+                System.out.println("llamar actualizaZj() y actualizaCj-Zj()");
+                
+                //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
+                //System.out.println("Se actualiza Zj y Cj-Zj");
+                //::::::::::: CÁLCULO DE Zj :::::::::::
+                double sumaZjCol = 0.0;
+                double Zj2[] = new double[Zj.length];
+                for(int j =0; j<Zj.length; j++) {
+                    for(int i=0; i<r ; i++) {
+                        sumaZjCol += (coefMult[i])*(T[i][j]);
+                    }
+                    Zj2[j] = sumaZjCol;
+                    sumaZjCol = 0.0;
+                }
+                /*for(int i =0; i< Zj.length; i++) {
+                    System.out.println("Zj2[" + i + "] = " + Zj2[i]);
+                }*/
+
+                //Asignamos los valores del arreglo Zj2 al arreglo Zj original, ya que se mostrará Zj
+                Zj = Zj2;
+
+                //::::::::::: CÁLCULO DEL VALOR DE Z (FO) :::::::::::
+                double nvozFinal= 0.0;
+                for(int i =0; i<r; i++) {
+                    nvozFinal += (coefMult[i])*(CoefRestDer[i]);
+                }
+                //System.out.println("Valor de zFinal = " + Zfinal);
+                
+                zFinal = nvozFinal;
+                
+                //::::::::::: CÁLCULO DEL VALOR DE Cj-Zj :::::::::::
+                for(int i=0; i<CjZj.length; i++) {
+                    CjZj[i] = Cj[i] - Zj[i];
+                }
                 
                 
                 //::::::::::: VERIFICACIÓN DE CONDICIONES PARA LLAMADA RECURSIVA S 2.0 :::::::::::
                 //:::::::::::                       MAX                                :::::::::::
                 
                 //::::::::::: SE VERIFICA QUE NO EXISTEN NEGATIVOS EN VECTOR SOLUCIÓN :::::::::::
-                System.out.println("Iteración antes de verificación en S 2.0");
-                mostrarIteracion(Cj, T, Zj, min, CjZj, CoefRestDer);
+                /*System.out.println("Iteración antes de verificación en S 2.0");
+                mostrarIteracion(Cj, T, Zj, zFinal, CjZj, CoefRestDer);*/
                 boolean banderaNeg = false;
                 System.out.println("Verificando si existen valores negativos en vector solución.");
                 for (int i = 0; i < CoefRestDer.length; i++) {
@@ -760,15 +856,24 @@ public class Solve {
                     }
                     if(p){
                         System.out.println("Existen (+) en Cj-Zj");
-                        simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, false, false);
+                        simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, zFinal ,r, op, false, false,false);
                     } else {
-                        System.out.println("NO existen (+) en Cj-Zj");
+                        System.out.println("\nNO existen (+) en Cj-Zj");
+                        System.out.println("\n############# Termina solución de Problema #############");
+                        mostrarIteracion(Cj, T, Zj, min, CjZj, CoefRestDer);
+                        varCoefMult.entrySet().forEach((e) -> {
+                            System.out.println("Fila " + e.getKey() + " variable " + e.getValue());
+                        });
+                        System.out.printf("Z = %.2f\n", zFinal);
+                        System.exit(0);
                     }
                     
                 } else {
                     //Hay coeficientes negativos en vector Solución
                     //simplex 3.0(); con bandera negativosVS = True;
-                    
+                    System.out.println("Se encontraron coeficientes en Vector Solución negativos!");
+                    System.out.println("CAMBIANDO A SIMPLEX 3.0...");
+                    simplex3(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, true, false);
                 }
                 
                 
@@ -1006,6 +1111,42 @@ public class Solve {
                     System.out.println("Fila " + e.getKey() + " --> " + e.getValue());
                 });
                 
+                //::::::::::: CALCULAMOS Zj y Cj-Zj con los nuevos coeficientes de intercambio :::::::::::
+                System.out.println("llamar actualizaZj() y actualizaCj-Zj()");
+                
+                //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
+                //System.out.println("Se actualiza Zj y Cj-Zj");
+                //::::::::::: CÁLCULO DE Zj :::::::::::
+                double sumaZjCol = 0.0;
+                double Zj2[] = new double[Zj.length];
+                for(int j =0; j<Zj.length; j++) {
+                    for(int i=0; i<r ; i++) {
+                        sumaZjCol += (coefMult[i])*(T[i][j]);
+                    }
+                    Zj2[j] = sumaZjCol;
+                    sumaZjCol = 0.0;
+                }
+                /*for(int i =0; i< Zj.length; i++) {
+                    System.out.println("Zj2[" + i + "] = " + Zj2[i]);
+                }*/
+
+                //Asignamos los valores del arreglo Zj2 al arreglo Zj original, ya que se mostrará Zj
+                Zj = Zj2;
+
+                //::::::::::: CÁLCULO DEL VALOR DE Z (FO) :::::::::::
+                double nvozFinal= 0.0;
+                for(int i =0; i<r; i++) {
+                    nvozFinal += (coefMult[i])*(CoefRestDer[i]);
+                }
+                //System.out.println("Valor de zFinal = " + Zfinal);
+                
+                zFinal = nvozFinal;
+                
+                //::::::::::: CÁLCULO DEL VALOR DE Cj-Zj :::::::::::
+                for(int i=0; i<CjZj.length; i++) {
+                    CjZj[i] = Cj[i] - Zj[i];
+                }
+                
                 //::::::::::: VERIFICACIÓN DE CONDICIONES PARA LLAMADA RECURSIVA S 2.0 :::::::::::
                 //:::::::::::                       MIN                                :::::::::::
                 
@@ -1029,20 +1170,24 @@ public class Solve {
                     }
                     if(n){
                         System.out.println("Existen (-) en Cj-Zj");
-                        simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, false, false);
+                        simplex2(T, Cj, CoefRestDer, Zj, CjZj, coefMult, zFinal ,r, op, false, false, false);
                     } else {
-                        System.out.println("NO existen (-) en Cj-Zj");
-                        System.out.println("############# Termina solución de Problema #############");
+                        System.out.println("\nNO existen (-) en Cj-Zj");
+                        System.out.println("\n############# Termina solución de Problema #############");
                         mostrarIteracion(Cj, T, Zj, min, CjZj, CoefRestDer);
                         varCoefMult.entrySet().forEach((e) -> {
-                            System.out.println("Fila " + e.getKey() + "variable " + e.getValue());
+                            System.out.println("Fila " + e.getKey() + " variable " + e.getValue());
                         });
+                        System.out.printf("Z = %.2f\n", zFinal);
                         System.exit(0);
                     }
                     
                 } else {
                     //Hay coeficientes negativos en vector Solución
                     //simplex 3.0(); con bandera negativosVS = True;
+                    System.out.println("Se encontraron coeficientes en Vector Solución negativos!");
+                    System.out.println("CAMBIANDO A SIMPLEX 3.0...");
+                    simplex3(T, Cj, CoefRestDer, Zj, CjZj, coefMult, r, op, true, false);
                 }
                 
                 

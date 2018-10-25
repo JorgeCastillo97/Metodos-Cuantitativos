@@ -657,6 +657,7 @@ public class Solve {
                 //::::::::::: SE VERIFICA SI SE AGREGARON COEF [+) :::::::::::
                 if(filtradosPos.isEmpty()) {
                     System.out.println("No existen coeficientes positivos, no hay criterio para seleccionar fila!");
+                    System.out.println("Solución interrumpida!");
                     System.exit(0);
                 }
                 
@@ -800,7 +801,7 @@ public class Solve {
                 
                 
                 //::::::::::: CALCULAMOS Zj y Cj-Zj con los nuevos coeficientes de intercambio :::::::::::
-                System.out.println("llamar actualizaZj() y actualizaCj-Zj()");
+                //System.out.println("actualizaZj() y actualizaCj-Zj()");
                 
                 //::::::::::: INICIA CÁLCULO DE Zj y Cj-Zj :::::::::::
                 //System.out.println("Se actualiza Zj y Cj-Zj");
@@ -867,7 +868,7 @@ public class Solve {
                     } else {
                         System.out.println("\nNO existen (+) en Cj-Zj");
                         System.out.println("\n############# Termina solución de Problema #############");
-                        mostrarIteracion(Cj, T, Zj, min, CjZj, CoefRestDer);
+                        mostrarIteracion(Cj, T, Zj, zFinal, CjZj, CoefRestDer);
                         varCoefMult.entrySet().forEach((e) -> {
                             System.out.println("Fila " + e.getKey() + " variable " + e.getValue());
                         });
@@ -977,6 +978,7 @@ public class Solve {
                 //::::::::::: SE VERIFICA SI SE AGREGARON COEF [+) :::::::::::
                 if(filtradosPos.isEmpty()) {
                     System.out.println("No existen coeficientes positivos, no hay criterio para seleccionar fila!");
+                    System.out.println("Solución interrumpida!");
                     System.exit(0);
                 }
                 

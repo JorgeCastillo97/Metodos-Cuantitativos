@@ -346,7 +346,7 @@ public class Solve {
             
             //::::::::::: SE ELIGE LA COLUMNA :::::::::::
             int c=0;
-            double min = Math.abs(filtrados.get(0));
+            double min = filtrados.get(0);
             for(int i = 1; i<filtrados.size(); i++) {
                 if(Math.abs(filtrados.get(i)) < min) {
                     min = filtrados.get(i);
